@@ -62,7 +62,7 @@ class LN882FirmwareUploader(object):
     """ upload flash tool in RAM """
     def uploadRamLoader(self,filename):
 
-        print ('Snyc with LN882... wait 10 seconds')
+        print ('Sync with LN882... wait 10 seconds')
         self.ser.flushInput()
         time.sleep(5)
         
@@ -227,10 +227,29 @@ class LN882FirmwareUploader(object):
       msg = self.ser.readline()
       print(msg.strip())
     
+    ''' The size of the read must be less than 0x100. '''
     def readFlash(self):
-      self.ser.write(bytes(b'flash_read 0x0 0x1000\r\n'))
+      self.ser.write(bytes(b'flash_read 0x0 0xFF\r\n'))
+      #Echo
       msg = self.ser.readline()
       print(msg.strip())
+      # Flash content
+      msg = self.ser.readline()
+      print(msg.strip())
+      
+    ''' Dump flash as intel hex'''
+    def dumpFlash(self):
+      self.ser.write(bytes(b'fdump 0x0 0x2000\r\n'))
+      #Echo
+      msg = self.ser.readline()
+      print(msg.strip())
+      # Flash content
+      while(1):
+        msg = self.ser.readline().strip()
+        if(msg == b'pppp'):
+            break
+        print(msg)
+        
             
     def getGpioAll(self):
       self.ser.write(bytes(b'gpio_read_al\r\n'))
@@ -265,6 +284,7 @@ def main():
     
     #h.flashInfo()
     #h.readFlash()
+    #h.dumpFlash()
     #h.getMacInOTP()
     #h.writeGpio('A8','1')    
     #h.readGpio('A1')
