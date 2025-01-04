@@ -1,7 +1,36 @@
 
-Sample
+# LN882 fashing tool for linux
+
+Here I will show you how you can easily flash the new LN882 modules via UART, just like you would flash ESP8266. Flashing those modules will allow you to free them from the cloud and connect them to Home Assistant. 
+
+
+https://github.com/openshwprojects/OpenBK7231T_App
+
+## Datasheet
+https://www.elektroda.com/rtvforum/topic4027545.html
+
+## Hardware setup
+
+You need to connect:
+
+- Module TX0 -> UART RX
+- Module RX 0-> UART TX
+- Module GND -> UART GND
+- Module VCC (3V3)  -> UART 3V3 (make sure your USB UART supports and is in 3V3 mode if it is selectable)
+- Module A9 -> GND
+A9 must remain LOW during whole flashing process (do not disconnect it!). 
+
+![image](doc/03.png)
+
+
+## Fashing new firmware
+
+
+
 
 ```
+loader.py
+
 Try to open port /dev/ttyUSB0. Press ctrl+c for break
 Connect to Port /dev/ttyUSB0
 Port open
@@ -222,4 +251,16 @@ send version... wait for:  RAMCODE
 b'version\r\n'
 b'RAMCODE\r\n'
 Done
+```
+
+
+## Build firmware with docker
+
+
+```
+git clone https://github.com/openshwprojects/OpenBK7231T_App.git
+
+git pull --recurse-submodules
+
+docker run --env TARGET_SDKS="OpenLN882H" -it -v "$(pwd)/..":/OpenBK7231T_App  openbk_build 
 ```
