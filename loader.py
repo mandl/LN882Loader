@@ -237,7 +237,7 @@ class LN882FirmwareUploader(object):
       msg = self.ser.readline()
       print(msg.strip())
       
-    ''' Dump flash as intel hex'''
+    ''' Dump flash as hex'''
     def dumpFlash(self):
       self.ser.write(bytes(b'fdump 0x0 0x2000\r\n'))
       #Echo
@@ -249,7 +249,29 @@ class LN882FirmwareUploader(object):
         if(msg == b'pppp'):
             break
         print(msg)
-        
+    
+    ''' Dump flash to file '''
+    def dumpFlashToFile(self):      
+      self.ser.write(bytes(b'fdump 0x0 0x1FFFFF\r\n'))
+      with open('dump.hex', 'wb') as dump_file:
+        while True:
+            msg = self.ser.readline().strip()
+            if msg == b'pppp':  # End marker for the dump
+                break
+            try:
+              # Decode the line to UTF-8 and split it into address and data
+                line = msg.decode('utf-8')
+                if ':' in line:  # Check if line contains address and data
+                    _, data = line.split(':', 1)  # Split at the colon
+                    data = data.strip().replace(' ', '')  # Remove spaces
+                    # Convert hex string to bytes and write to file
+                    dump_file.write(bytes.fromhex(data))
+            except (ValueError, UnicodeDecodeError):
+                # Skip lines that don't match the expected format
+                print(f"Skipping line: {msg.decode('utf-8')}")
+        print('Flash dumped to dump.hex')
+
+  
             
     def getGpioAll(self):
       self.ser.write(bytes(b'gpio_read_al\r\n'))
@@ -284,7 +306,9 @@ def main():
     
     #h.flashInfo()
     #h.readFlash()
+    #h.changeBaudrate(921600)
     #h.dumpFlash()
+    #h.dumpFlashToFile()
     #h.getMacInOTP()
     #h.writeGpio('A8','1')    
     #h.readGpio('A1')
