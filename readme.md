@@ -1,5 +1,5 @@
 
-# LN882 fashing tool for linux
+# LN882H fashing tool for Linux
 
 Here I will show you how you can easily flash the new LN882 modules via UART, just like you would flash ESP8266. Flashing those modules will allow you to free them from the cloud and connect them to Home Assistant. 
 
@@ -14,7 +14,7 @@ https://www.elektroda.com/rtvforum/topic4027545.html
 You need to connect:
 
 - Module TX0 -> UART RX
-- Module RX 0-> UART TX
+- Module RX0 -> UART TX
 - Module GND -> UART GND
 - Module VCC (3V3)  -> UART 3V3 (make sure your USB UART supports and is in 3V3 mode if it is selectable)
 - Module A9 -> GND
@@ -256,6 +256,9 @@ Done
 
 ## Build firmware with docker
 
+More information about this.
+
+https://github.com/openshwprojects/OpenBK7231T_App
 
 ```
 git clone https://github.com/openshwprojects/OpenBK7231T_App.git
@@ -263,4 +266,40 @@ git clone https://github.com/openshwprojects/OpenBK7231T_App.git
 git pull --recurse-submodules
 
 docker run --env TARGET_SDKS="OpenLN882H" -it -v "$(pwd)/..":/OpenBK7231T_App  openbk_build 
+```
+
+## Hacking
+### Dump flash
+
+```
+2025-01-04 16:24:29,719 - DEBUG - Packet End >>>
+2025-01-04 16:24:29,733 - DEBUG - <<< 0x6
+2025-01-04 16:24:29,733 - DEBUG - Task Done!
+2025-01-04 16:24:29,734 - DEBUG - File: LN882H_RAM_BIN.bin
+2025-01-04 16:24:29,734 - DEBUG - Size: 37872 Bytes
+2025-01-04 16:24:29,734 - DEBUG - Packets: 37
+Start program. Wait 10 seconds
+send version... wait for:  RAMCODE
+b'version\r\n'
+b'RAMCODE\r\n'
+flash_uid
+flash uid:0x433031373839372E30300900C30073FF
+b'fdump 0x0 0x2000'
+b'0x0000: 00 00 00 20 8C 26 20 00 03 47 D8 54 00 01 00 20'
+b'0x0010: 00 00 00 00 14 20 D1 31 01 00 00 00 00 00 00 00'
+b'0x0020: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x0030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x0040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x0050: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x0060: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x0070: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x0080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x0090: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x00A0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x00B0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x00C0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x00D0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x00E0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b'0x00F0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+b''
 ```
