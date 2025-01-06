@@ -62,7 +62,7 @@ class LN882FirmwareUploader(object):
     """ upload flash tool in RAM """
     def uploadRamLoader(self,filename):
 
-        print ('Sync with LN882... wait 10 seconds')
+        print ('Sync with LN882H... wait 5 seconds')
         self.ser.flushInput()
         time.sleep(5)
         
@@ -81,11 +81,15 @@ class LN882FirmwareUploader(object):
         
         modem = YModem(self.getc, self.putc)
     
+        # send file. using ymodem
+        # https://en.wikipedia.org/wiki/YMODEM
         modem.send_file(filename,False,3)
     
-        print("Start program. Wait 10 seconds")
+        # wait for ramloader is running
+        print("Start program. Wait 5 seconds")
         time.sleep(5)
         
+        # check 
         msg = ''
         while (msg != b'RAMCODE\r\n'):
             time.sleep(5)
@@ -97,6 +101,7 @@ class LN882FirmwareUploader(object):
             msg = self.ser.readline()
             print(msg)
                  
+        # get flash uid
         self.ser.write(bytes(b'flash_uid\r\n'))
         msg = self.ser.readline().decode("utf-8")
         print(msg.strip())
@@ -104,7 +109,7 @@ class LN882FirmwareUploader(object):
         print(msg.strip()) 
     
     def changeBaudrate(self,baudrate):
-          # change baudrate
+        # sned change baudrate command
         print('Change baudrate ' + str(baudrate))  
         msg =  'baudrate ' + str(baudrate) +'\r\n' 
         self.ser.write(msg.encode(encoding="utf-8"))
@@ -112,9 +117,11 @@ class LN882FirmwareUploader(object):
         #read echo
         msg = self.ser.read(15)
         print(msg)
+        
+        # change my baudrate
         self.ser.baudrate = baudrate
     
-        print('Wait 5 seconds for sync')
+        print('Wait 5 seconds for change')
         time.sleep(5)
         self.flushCom()
 
@@ -130,7 +137,7 @@ class LN882FirmwareUploader(object):
             msg = self.ser.readline()
             print(msg)
            
-        print('Done')
+        print('Baudrate change done')
         
     
     def flashProgram(self,port,filename):      
@@ -146,21 +153,28 @@ class LN882FirmwareUploader(object):
         msg = self.ser.readline().decode("utf-8")
         print(msg.strip())
         
+        # send upgrade command
         self.ser.write(bytes(b'upgrade\r\n'))
         # read echo
         msg = self.ser.read(7)
         
-        # upload file. 16k packet size
+        # upload file using ymodem. 16k packet size
         modem.send_file(filename,True,3)
         
+        # get upload file count
         self.ser.write(bytes(b'filecount\r\n'))
         msg = self.ser.readline()
         print(msg.strip())
         msg = self.ser.readline()
         print(msg.strip())
         
-        self.changeBaudrate(115200)        
-    
+        # change baudrate back
+        self.changeBaudrate(115200)
+                
+    ''' 
+        Read flash info
+        id:0xEB6015,flash size:2M Byte
+    '''
     def flashInfo(self):
         self.ser.write(bytes(b'flash_info\r\n'))
         msg = self.ser.readline()
@@ -227,7 +241,10 @@ class LN882FirmwareUploader(object):
       msg = self.ser.readline()
       print(msg.strip())
     
-    ''' The size of the read must be less than 0x100. '''
+    ''' 
+    Read flash
+    The size of the read must be less than 0x100. 
+    '''
     def readFlash(self):
       self.ser.write(bytes(b'flash_read 0x0 0xFF\r\n'))
       #Echo
@@ -250,7 +267,7 @@ class LN882FirmwareUploader(object):
             break
         print(msg)
     
-    ''' Dump flash to file '''
+    ''' Dump flash to file dump.hex'''
     def dumpFlashToFile(self):      
       self.ser.write(bytes(b'fdump 0x0 0x1FFFFF\r\n'))
       with open('dump.hex', 'wb') as dump_file:
@@ -292,7 +309,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='Firmware uploader for LN882.', prog='loader')
     parser.add_argument('--port', '-p', help='Serial port device', default='/dev/ttyUSB0')
-    parser.add_argument('--flashfile', '-f', help='Upload firmware file', default='OpenLN882H_1.17.769.bin')
+    parser.add_argument('--flashfile', '-f', help='Upload firmware file', default='OpenLN882H_1.18.7.bin')
     args = parser.parse_args()
          
     if not os.path.isfile(args.flashfile):
