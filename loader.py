@@ -105,7 +105,7 @@ class LN882FirmwareUploader(object):
         # get flash uid
         self.ser.write(bytes(b'flash_uid\r\n'))
         msg = self.ser.readline().decode("utf-8")
-        print(msg.strip())
+        # print(msg.strip())
         msg = self.ser.readline().decode("utf-8")
         print(msg.strip())
 
@@ -172,6 +172,17 @@ class LN882FirmwareUploader(object):
 
         # change baudrate back
         self.changeBaudrate(115200)
+
+    def flash_erase_all(self):
+        '''
+        Erase flash 
+
+        '''
+        self.ser.write(bytes(b'ferase_all\r\n'))
+        msg = self.ser.readline()
+        print(msg.strip())
+        msg = self.ser.readline()
+        print(msg.strip())
 
     def flashInfo(self):
         '''
@@ -325,7 +336,7 @@ class LN882FirmwareUploader(object):
                 print('.', end='', flush=True)
                 flash_addr += 0x100
         print()
-        print('done.')
+        print('done')
 
     def dumpFlash(self):
         ''' Dump flash as hex'''
@@ -378,6 +389,7 @@ def main():
     # h.flashInfo()
     # h.read_flash(0)
     # h.get_mac_local()
+    # h.flash_erase_all()
     # h.changeBaudrate(921600)
     # h.changeBaudrate(2000000)
     # h.read_flash_to_file("dump.bin", 0x200000)
@@ -389,9 +401,7 @@ def main():
     # h.readGpio('A1')
     # h.readGpio('A6')
     # h.readGpio('A7')
-
     # h.getGpioAll()
-    # h.getTest()
 
     h.flashProgram(args.port, args.flashfile)
 
