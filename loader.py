@@ -35,9 +35,11 @@ from YModem import YModem
 
 
 class LN882FirmwareUploader(object):
+    ''' Flashing and dumping tool for LN882H'''
 
     def __init__(self):
         print('Init')
+        self.ser = None
 
     def open(self, port, baudrate=115200):
         '''open the comport'''
@@ -55,12 +57,14 @@ class LN882FirmwareUploader(object):
         print("Port open")
 
     def getc(self, size, timeout=1):
+        ''' getc for ymodem'''
         return self.ser.read(size) or None
 
     def putc(self, data, timeout=1):
+        ''' putc for ymodem'''
         return self.ser.write(data)
 
-    def uploadRamLoader(self, filename):
+    def upload_ram_loader(self, filename):
         """ upload flash tool in RAM """
 
         print('Sync with LN882H... wait 5 seconds')
@@ -68,9 +72,9 @@ class LN882FirmwareUploader(object):
         time.sleep(5)
 
         msg = ''
-        while (msg != b'Mar 14 2021/00:23:32\r\n'):
+        while msg != b'Mar 14 2021/00:23:32\r\n':
             time.sleep(2)
-            self.flushCom()
+            self.flush_com()
             print('send version... wait for:  Mar 14 2021/00:23:32')
             self.ser.write(bytes(b'version\r\n'))
             msg = self.ser.readline()
@@ -92,7 +96,7 @@ class LN882FirmwareUploader(object):
 
         # check
         msg = ''
-        while (msg != b'RAMCODE\r\n'):
+        while msg != b'RAMCODE\r\n':
             time.sleep(5)
             self.ser.flushInput()
             print('send version... wait for:  RAMCODE')
@@ -109,7 +113,7 @@ class LN882FirmwareUploader(object):
         msg = self.ser.readline().decode("utf-8")
         print(msg.strip())
 
-    def changeBaudrate(self, baudrate):
+    def change_baudrate(self, baudrate):
         ''' Change baudrate '''
         # send change baudrate command
         print('Change baudrate ' + str(baudrate))
@@ -125,14 +129,14 @@ class LN882FirmwareUploader(object):
 
         print('Wait 5 seconds for change')
         time.sleep(5)
-        self.flushCom()
+        self.flush_com()
 
         # ping and sync
         msg = ''
-        while (msg != b'RAMCODE\r\n'):
+        while msg != b'RAMCODE\r\n':
             print('send version... wait for:  RAMCODE')
             time.sleep(1)
-            self.flushCom()
+            self.flush_com()
             self.ser.write(bytes(b'version\r\n'))
             msg = self.ser.readline()
             print(msg)
@@ -141,10 +145,10 @@ class LN882FirmwareUploader(object):
 
         print('Baudrate change done')
 
-    def flashProgram(self, port, filename):
+    def flash_program(self, filename):
         ''' Flash new firmware version '''
         # change baudrate
-        self.changeBaudrate(921600)
+        self.change_baudrate(921600)
         modem = YModem(self.getc, self.putc)
 
         # set flash start adress
@@ -171,7 +175,7 @@ class LN882FirmwareUploader(object):
         print(msg.strip())
 
         # change baudrate back
-        self.changeBaudrate(115200)
+        self.change_baudrate(115200)
 
     def flash_erase_all(self):
         '''
@@ -184,11 +188,16 @@ class LN882FirmwareUploader(object):
         msg = self.ser.readline()
         print(msg.strip())
 
-    def flashInfo(self):
+    def flash_info(self):
         '''
         Read flash info
+        
+        LN882HKI	QFN-32, 5mm pitch	2MB Flash
+        
+        LN882HKG	QFN-32, 5mm pitch	1MB Flash
 
         Sample id:0xEB6015,flash size:2M Byte
+        
         '''
         self.ser.write(bytes(b'flash_info\r\n'))
         msg = self.ser.readline()
@@ -196,7 +205,8 @@ class LN882FirmwareUploader(object):
         msg = self.ser.readline()
         print(msg.strip())
 
-    def getMacInOTP(self):
+    def get_mac_in_otp(self):
+        ''' get mac otp '''
         self.ser.write(bytes(b'get_mac_in_flash_otp\r\n'))
         msg = self.ser.readline()
         print(msg.strip())
@@ -206,6 +216,7 @@ class LN882FirmwareUploader(object):
         print(msg.strip())
 
     def get_mac_local(self):
+        ''' get mac local '''
         self.ser.write(bytes(b'get_m_local_mac\r\n'))
         msg = self.ser.readline()
         print(msg.strip())
@@ -214,7 +225,8 @@ class LN882FirmwareUploader(object):
         msg = self.ser.readline()
         print(msg.strip())
 
-    def readFlashOTP(self):
+    def read_flash_otp(self):
+        ''' read flash otp '''
         self.ser.write(bytes(b'flash_ot p_read 0 256\r\n'))
         msg = self.ser.readline()
         print(msg.strip())
@@ -223,7 +235,8 @@ class LN882FirmwareUploader(object):
         msg = self.ser.readline()
         print(msg.strip())
 
-    def getOTPLock(self):
+    def get_otp_lock(self):
+        ''' read otp lock '''
         self.ser.write(bytes(b'flash_ot p_get_lock_state\r\n'))
         # echo
         msg = self.ser.readline()
@@ -240,7 +253,8 @@ class LN882FirmwareUploader(object):
         msg = self.ser.readline()
         print(msg.strip())
 
-    def readGpio(self, pin):
+    def read_gpio(self, pin):
+        ''' read gpio pin '''
         msg = 'gpio_read ' + pin + '\r\n'
         self.ser.write(msg.encode(encoding="utf-8"))
         # Echo
@@ -256,7 +270,8 @@ class LN882FirmwareUploader(object):
         msg = self.ser.readline()
         print(msg.strip())
 
-    def writeGpio(self, pin, val):
+    def write_gpio(self, pin, val):
+        ''' write gpio pin '''
         msg = 'gpio_write ' + pin + ' ' + val + '\r\n'
         self.ser.write(msg.encode(encoding="utf-8"))
         msg = self.ser.readline()
@@ -279,7 +294,7 @@ class LN882FirmwareUploader(object):
                       True       read from OTP 
 
         '''
-        bin = bytearray()
+        flash_data = bytearray()
         if is_otp:
             cmd = 'flash_otp_read ' + hex(flash_addr) + ' 0x100\r\n'
         else:
@@ -299,22 +314,22 @@ class LN882FirmwareUploader(object):
         if line_len != 256 * 2 + 4:
             print()
             print('Lost bytes. Got only: %s' % line_len)
-            return False, bin
+            return False, flash_data
 
         checksum = line[-4:]
         # print(checksum)
 
         linedata = line[:-4]  # Remove checksum
-        bin = bytearray.fromhex(linedata)
-        bincrc = YModem.calc_crc(YModem, bin)
+        flash_data = bytearray.fromhex(linedata)
+        bincrc = YModem.calc_crc(YModem, flash_data)
 
         # print(hex(bincrc))
         if int(checksum, 16) != bincrc:
             print()
             print("Checksum fail")
-            return False, bin
+            return False, flash_data
 
-        return True, bin
+        return True, flash_data
 
     def read_flash_to_file(self, filename, flash_size, is_otp=False):
         ''' 
@@ -330,28 +345,29 @@ class LN882FirmwareUploader(object):
         flash_addr = 0
         with open(filename, "wb") as flash_file:
             while flash_addr < flash_size:
-                ok, bin = self.read_flash(flash_addr, is_otp)
-                if ok == True:
-                    flash_file.write(bin)
+                ok, flash_data = self.read_flash(flash_addr, is_otp)
+                if ok is True:
+                    flash_file.write(flash_data)
                 print('.', end='', flush=True)
                 flash_addr += 0x100
         print()
         print('done')
 
-    def dumpFlash(self):
+    def dump_flash(self):
         ''' Dump flash as hex'''
         self.ser.write(bytes(b'fdump 0x0 0x2000\r\n'))
         # Echo
         msg = self.ser.readline()
         print(msg.strip())
         # Flash content
-        while (1):
+        while True:
             msg = self.ser.readline().strip()
-            if (msg == b'pppp'):
+            if msg == b'pppp':
                 break
             print(msg)
 
-    def getGpioAll(self):
+    def get_gpio_all(self):
+        ''' Real all gpio pins'''
         self.ser.write(bytes(b'gpio_read_al\r\n'))
         msg = self.ser.readline()
         print(msg.strip())
@@ -359,14 +375,17 @@ class LN882FirmwareUploader(object):
         print(msg.strip())
 
     def close(self):
+        ''' close serial '''
         self.ser.close()
 
-    def flushCom(self):
+    def flush_com(self):
+        ''' flush all'''
         self.ser.flushInput()
         self.ser.flushOutput()
 
 
 def main():
+    ''' LN882H tool '''
 
     parser = argparse.ArgumentParser(
         description='Firmware uploader for LN882H.', prog='loader')
@@ -384,26 +403,26 @@ def main():
     h.open(args.port)
 
     # load RAMCode so that we can access flash
-    h.uploadRamLoader('LN882H_RAM_BIN.bin')
+    h.upload_ram_loader('LN882H_RAM_BIN.bin')
 
-    # h.flashInfo()
+    # h.flash_info()
     # h.read_flash(0)
     # h.get_mac_local()
     # h.flash_erase_all()
-    # h.changeBaudrate(921600)
-    # h.changeBaudrate(2000000)
+    # h.change_baudrate(921600)
+    # h.change_baudrate(2000000)
     # h.read_flash_to_file("dump.bin", 0x200000)
     # h.read_flash_to_file("dump_otp.bin", 0x400, True)
-    # h.changeBaudrate(921600)
-    # h.dumpFlash()
-    # h.getMacInOTP()
-    # h.writeGpio('A8','1')
-    # h.readGpio('A1')
-    # h.readGpio('A6')
-    # h.readGpio('A7')
-    # h.getGpioAll()
+    # h.change_baudrate(921600)
+    # h.dump_flash()
+    # h.get_mac_in_otp()
+    # h.write_gpio('A8', '1')
+    # h.read_gpio('A1')
+    # h.read_gpio('A6')
+    # h.read_gpio('A7')
+    # h.get_gpio_all()
 
-    h.flashProgram(args.port, args.flashfile)
+    h.flash_program(args.flashfile)
 
     h.close()
 
