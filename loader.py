@@ -34,7 +34,7 @@ except ImportError:
 from YModem import YModem
 
 
-class LN882FirmwareUploader(object):
+class LN882FirmwareUploader:
     ''' Flashing and dumping tool for LN882H'''
 
     def __init__(self):

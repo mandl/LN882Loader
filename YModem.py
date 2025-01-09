@@ -1,16 +1,13 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # add 16k packet size mode for LN882
-
 import os
-import sys
-import time
-import math
-import string
-import logging
-logging.basicConfig(level = logging.DEBUG, format = '%(asctime)s - %(levelname)s - %(message)s')
-
 from YMTask import SendTask, ReceiveTask
+
+import logging
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 # ymodem data header byte
 SOH = b'\x01'
@@ -20,6 +17,7 @@ ACK = b'\x06'
 NAK = b'\x15'
 CAN = b'\x18'
 CRC = b'C'
+
 
 class YModem(object):
     def __init__(self, getc, putc, header_pad=b'\x00', data_pad=b'\x1a'):
@@ -35,12 +33,13 @@ class YModem(object):
         for _ in range(count):
             self.putc(CAN)
 
-    def send_file(self, file_path, packet_size_16k=True,retry=20, callback=None):
+    def send_file(self, file_path, packet_size_16k=True, retry=20, callback=None):
         try:
             file_stream = open(file_path, 'rb')
             file_name = os.path.basename(file_path)
             file_size = os.path.getsize(file_path)
-            file_sent = self.send(file_stream, file_name, file_size, packet_size_16k, retry, callback)
+            file_sent = self.send(file_stream, file_name,
+                                  file_size, packet_size_16k, retry, callback)
         except IOError as e:
             self.log.error(str(e))
         finally:
@@ -66,18 +65,19 @@ class YModem(object):
                     else:
                         cancel_count += 1
                 else:
-                    self.log.warn("Expected " + hex(ord(ch)) + ", but got " + hex(ord(c)))
+                    self.log.warning("Expected " + hex(ord(ch)) +
+                                     ", but got " + hex(ord(c)))
         return 0
 
     def send(self, data_stream, data_name, data_size, packet_size_16k=True, retry=20,  callback=None):
-        
+
         if packet_size_16k == True:
             packet_size = 4096*4
         else:
-            packet_size = 1024    
-            
+            packet_size = 1024
+
         # [<<< CRC]
-        self.wait_for_next(CRC) #on first packet we must send instantly
+        self.wait_for_next(CRC)  # on first packet we must send instantly
 
         # [first packet >>>]
         header = self._make_edge_packet_header()
@@ -107,7 +107,7 @@ class YModem(object):
         # [<<< ACK]
         # [<<< CRC]
         self.wait_for_next(ACK)
-        self.wait_for_next(CRC) #we just get an ACK or CAN, no CRC
+        self.wait_for_next(CRC)  # we just get an ACK or CAN, no CRC
 
         # [data packet >>>]
         # [<<< ACK]
@@ -150,7 +150,8 @@ class YModem(object):
 
                     if error_count > retry:
                         self.abort()
-                        self.log.error('send error: NAK received %d , aborting', retry)
+                        self.log.error(
+                            'send error: NAK received %d , aborting', retry)
                         return -2
 
             sequence = (sequence + 1) % 0x100
@@ -195,7 +196,8 @@ class YModem(object):
                     else:
                         cancel_count += 1
                 else:
-                    self.log.warn("Expected 0x01(SOH)/0x02(STX)/0x18(CAN), but got " + hex(ord(c)))
+                    self.log.warning(
+                        "Expected 0x01(SOH)/0x02(STX)/0x18(CAN), but got " + hex(ord(c)))
 
     def wait_for_eot(self):
         eot_count = 0
@@ -216,7 +218,8 @@ class YModem(object):
                         self.log.debug("<<< CRC")
                         break
                 else:
-                    self.log.warn("Expected 0x04(EOT), but got " + hex(ord(c)))
+                    self.log.warning(
+                        "Expected 0x04(EOT), but got " + hex(ord(c)))
 
     def recv_file(self, root_path, callback=None):
         while True:
@@ -231,7 +234,8 @@ class YModem(object):
                     packet_size = 1024
                     break
                 else:
-                    self.log.warn("Expected 0x01(SOH)/0x02(STX)/0x18(CAN), but got " + hex(ord(c)))
+                    self.log.warning(
+                        "Expected 0x01(SOH)/0x02(STX)/0x18(CAN), but got " + hex(ord(c)))
 
         IS_FIRST_PACKET = True
         FIRST_PACKET_RECEIVED = False
@@ -282,13 +286,16 @@ class YModem(object):
                             self.log.debug("<<< ACK")
                             self.putc(CRC)
                             self.log.debug("<<< CRC")
-                            file_name_bytes, data_size_bytes = (data[:-2]).rstrip(self.header_pad).split(self.header_pad)
+                            file_name_bytes, data_size_bytes = (
+                                data[:-2]).rstrip(self.header_pad).split(self.header_pad)
                             file_name = bytes.decode(file_name_bytes)
                             data_size = bytes.decode(data_size_bytes)
-                            self.log.debug("TASK: " + file_name + " " + data_size + "Bytes")
+                            self.log.debug("TASK: " + file_name +
+                                           " " + data_size + "Bytes")
                             self.rt.set_task_name(file_name)
                             self.rt.set_task_size(int(data_size))
-                            file_stream = open(os.path.join(root_path, file_name), 'wb+')
+                            file_stream = open(os.path.join(
+                                root_path, file_name), 'wb+')
                             FIRST_PACKET_RECEIVED = True
                             sequence = (sequence + 1) % 0x100
 
@@ -301,7 +308,8 @@ class YModem(object):
                             valid_data = data[:-2]
                             # last data packet
                             if self.rt.get_valid_received_packets() == self.rt.get_task_packets():
-                                valid_data = valid_data[:self.rt.get_last_valid_packet_size()]
+                                valid_data = valid_data[:self.rt.get_last_valid_packet_size(
+                                )]
                                 WAIT_FOR_EOT = True
                             self.rt.add_valid_received_bytes(len(valid_data))
                             file_stream.write(valid_data)
@@ -330,11 +338,11 @@ class YModem(object):
         return bytearray(_bytes)
 
     def _make_data_packet_header(self, packet_size, sequence):
-        assert packet_size in (128, 1024,4096*4), packet_size
+        assert packet_size in (128, 1024, 4096*4), packet_size
         _bytes = []
         if packet_size == 128:
             _bytes.append(ord(SOH))
-        elif ((packet_size == 1024) or(packet_size == 4096*4)):
+        elif ((packet_size == 1024) or (packet_size == 4096*4)):
             _bytes.append(ord(STX))
         _bytes.extend([sequence, 0xff - sequence])
         return bytearray(_bytes)
@@ -401,6 +409,7 @@ class YModem(object):
             crctbl_idx = ((crc >> 8) ^ char) & 0xff
             crc = ((crc << 8) ^ self.crctable[crctbl_idx]) & 0xffff
         return crc & 0xffff
+
 
 if __name__ == '__main__':
     pass

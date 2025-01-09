@@ -1,11 +1,13 @@
 import math
 
+
 class TaskState:
     ERROR = -99
     ABORTED = -1
     PREPARED = 0
     RUNNING = 1
     FINISHED = 2
+
 
 class SendTask(object):
     def __init__(self):
@@ -18,7 +20,7 @@ class SendTask(object):
         self._missing_sent_packets = 0
         self._valid_sent_packets = 0
         self._valid_sent_bytes = 0
-    
+
     def inc_sent_packets(self):
         self._sent_packets += 1
 
@@ -45,6 +47,7 @@ class SendTask(object):
         self._task_packets = math.ceil(data_size / 1024)
         self._last_valid_packets_size = data_size % 1024
 
+
 class ReceiveTask(object):
     def __init__(self):
         self._state = TaskState.PREPARED
@@ -56,7 +59,7 @@ class ReceiveTask(object):
         self._missing_received_packets = 0
         self._valid_received_packets = 0
         self._valid_received_bytes = 0
-    
+
     def inc_received_packets(self):
         self._received_packets += 1
 
@@ -88,9 +91,9 @@ class ReceiveTask(object):
         self._task_size = data_size
         self._task_packets = math.ceil(data_size / 1024)
         self._last_valid_packets_size = data_size % 1024
-    
+
     def get_task_name(self):
         return self._task_name
-    
+
     def get_task_size(self):
         return self._task_size
